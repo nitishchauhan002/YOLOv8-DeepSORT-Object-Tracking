@@ -3,7 +3,6 @@ from ultralytics import YOLO
 
 from deep_sort.detection import Detection
 
-
 class YOLOv8Detector:
     """
     Wraps Ultralytics YOLOv8 and converts raw model output
