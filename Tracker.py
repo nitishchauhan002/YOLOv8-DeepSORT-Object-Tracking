@@ -7,7 +7,7 @@ from detect         import YOLOv8Detector
 from deep_sort      import DeepSORT
 
 
-# ── Colour palette for unique track IDs ──────────────────────────────────────
+
 def get_color(track_id: int):
     palette = [
         (255, 56,  56),  (255, 157, 151), (255, 112,  31),
