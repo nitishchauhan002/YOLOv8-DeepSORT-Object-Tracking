@@ -21,7 +21,7 @@ def get_color(track_id: int):
     return palette[track_id % len(palette)]
 
 
-# ── Drawing helper ────────────────────────────────────────────────────────────
+
 def draw_tracks(frame, tracks, trails):
     for track in tracks:
         x1, y1, x2, y2 = track.to_xyxy()
