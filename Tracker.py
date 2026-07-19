@@ -51,7 +51,7 @@ def draw_tracks(frame, tracks, trails):
     return frame
 
 
-# ── Stats overlay ─────────────────────────────────────────────────────────────
+
 def draw_stats(frame, n_tracks, frame_idx, fps):
     overlay = frame.copy()
     cv2.rectangle(overlay, (0, 0), (260, 90), (0, 0, 0), -1)
