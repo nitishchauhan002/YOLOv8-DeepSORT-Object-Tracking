@@ -1,0 +1,74 @@
+import numpy as np
+
+
+def cosine_distance(a, b):
+    """
+    Compute pairwise cosine distance between two sets of vectors.
+    a: (M, D), b: (N, D) → returns (M, N) distance matrix.
+    """
+    a = np.array(a)
+    b = np.array(b)
+    a_norm = a / (np.linalg.norm(a, axis=1, keepdims=True) + 1e-6)
+    b_norm = b / (np.linalg.norm(b, axis=1, keepdims=True) + 1e-6)
+    return 1.0 - a_norm @ b_norm.T    # cosine distance in [0, 2]
+
+
+def iou_distance(tracks_bboxes, detections_bboxes):
+    """
+    Compute pairwise IoU-based distance between tracks and detections.
+    Returns (M, N) cost matrix where lower = better match.
+    """
+    tracks_bboxes     = np.array(tracks_bboxes,     dtype=float)  # (M, 4)
+    detections_bboxes = np.array(detections_bboxes, dtype=float)  # (N, 4)
+
+    M = len(tracks_bboxes)
+    N = len(detections_bboxes)
+    cost = np.zeros((M, N))
+
+    for i, tb in enumerate(tracks_bboxes):
+        for j, db in enumerate(detections_bboxes):
+            ix1 = max(tb[0], db[0])
+            iy1 = max(tb[1], db[1])
+            ix2 = min(tb[2], db[2])
+            iy2 = min(tb[3], db[3])
+            inter_w = max(0, ix2 - ix1)
+            inter_h = max(0, iy2 - iy1)
+            inter   = inter_w * inter_h
+            area_t  = max(0, tb[2] - tb[0]) * max(0, tb[3] - tb[1])
+            area_d  = max(0, db[2] - db[0]) * max(0, db[3] - db[1])
+            union   = area_t + area_d - inter
+            iou     = inter / (union + 1e-6)
+            cost[i, j] = 1.0 - iou    # IoU distance
+
+    return cost
+
+
+def combined_cost(tracks, detections, lambda_=0.5):
+    """
+    Blend appearance (cosine) + motion (IoU) cost matrices.
+    lambda_ controls appearance weight; (1 - lambda_) controls IoU weight.
+    """
+    if not tracks or not detections:
+        return np.zeros((len(tracks), len(detections)))
+
+    # Appearance cost
+    track_features = []
+    for t in tracks:
+        if t.features:
+            track_features.append(np.mean(t.features, axis=0))
+        else:
+            track_features.append(np.zeros(128))
+
+    det_features = [
+        d.feature if d.feature is not None else np.zeros(128)
+        for d in detections
+    ]
+
+    appear_cost = cosine_distance(track_features, det_features)
+
+    # IoU cost
+    track_bboxes = [t.to_xyxy() for t in tracks]
+    det_bboxes   = [d.to_xyxy() for d in detections]
+    motion_cost  = iou_distance(track_bboxes, det_bboxes)
+
+    return lambda_ * appear_cost + (1 - lambda_) * motion_cost
