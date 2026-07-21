@@ -1,0 +1,51 @@
+import numpy as np
+
+
+class KalmanFilter:
+    """
+    Kalman Filter for predicting bounding box position across frames.
+    State vector: [x, y, w, h, vx, vy, vw, vh]
+    Observation:  [x, y, w, h]
+    """
+
+    def __init__(self):
+        dt = 1.0  # time step
+
+        # State transition matrix (8x8)
+        self.F = np.eye(8)
+        for i in range(4):
+            self.F[i, i + 4] = dt
+
+        # Observation matrix (4x8)
+        self.H = np.eye(4, 8)
+
+        # Process noise covariance
+        self.Q = np.eye(8) * 0.01
+
+        # Measurement noise covariance
+        self.R = np.eye(4) * 1.0
+
+        # Error covariance matrix
+        self.P = np.eye(8) * 10.0
+
+    def initiate(self, measurement):
+        """Initialize state from first detection [x, y, w, h]."""
+        state = np.zeros(8)
+        state[:4] = measurement
+        covariance = self.P.copy()
+        return state, covariance
+
+    def predict(self, state, covariance):
+        """Predict next state using motion model."""
+        state = self.F @ state
+        covariance = self.F @ covariance @ self.F.T + self.Q
+        return state, covariance
+
+    def update(self, state, covariance, measurement):
+        """Correct predicted state with new measurement."""
+        S = self.H @ covariance @ self.H.T + self.R
+        K = covariance @ self.H.T @ np.linalg.inv(S)  # Kalman gain
+        y = measurement - self.H @ state               # Innovation
+        state = state + K @ y
+        covariance = (np.eye(8) - K @ self.H) @ covariance
+        return state, covariance
