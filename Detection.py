@@ -12,7 +12,6 @@ class Detection:
         cls_name: str   — class label string
         feature : np.array — deep appearance embedding (Re-ID vector)
     """
-
     def __init__(self, bbox, conf, cls, cls_name, feature=None):
         self.bbox     = np.array(bbox, dtype=float)      # [x1, y1, x2, y2]
         self.conf     = float(conf)
